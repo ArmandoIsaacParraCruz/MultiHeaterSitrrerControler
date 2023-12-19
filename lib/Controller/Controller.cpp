@@ -46,3 +46,8 @@ double Controller::getInput()
 {
     return input;
 }
+
+double Controller::getOutput()
+{
+    return output;
+}

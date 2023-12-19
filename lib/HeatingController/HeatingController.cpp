@@ -13,9 +13,12 @@ HeatingController::HeatingController(   uint8_t _heatingResistorPin,
                                         uint8_t _clkPin,
                                         uint8_t _csPin, 
                                         uint8_t _soPin)
-    : Controller(_kp, _ki, _kd), max6675Sensor(_clkPin, _csPin, _soPin)
+    : Controller(_kp, _ki, _kd)
 {
     heatingResistorPin = _heatingResistorPin;
+    clkPin = _clkPin;
+    csPin = _csPin; 
+    soPin = _soPin; 
     lastZeroCrossingTime = micros();
     semicyclesCounter = 0;
     maxNumberOfSemicycles = 120;
@@ -34,7 +37,7 @@ void HeatingController::adjustOutputSignal()
 
 void HeatingController::updateInput()
 {
-    input = double(max6675Sensor.readCelsius());
+    input = getTemperature();
     computeOutput();
 }
 
@@ -53,4 +56,22 @@ HeatingController::~HeatingController()
     digitalWrite(heatingResistorPin, LOW);
     pinMode(heatingResistorPin, INPUT);
     ledcDetachPin(zeroCrossingPin);
+}
+
+float HeatingController::getTemperature()
+{
+    digitalWrite(csPin, LOW); // Activar sensor
+    uint16_t v;
+
+    // Leer datos
+    byte msb = SPI.transfer(0x00);
+    byte lsb = SPI.transfer(0x00);
+
+    digitalWrite(csPin, HIGH); // Desactivar sensor
+
+    // Convertir bits a temperatura
+    int temperature = ((msb << 8) | lsb) >> 3;
+
+    float celsius = temperature * 0.25;
+    return celsius;
 }

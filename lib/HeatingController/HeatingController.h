@@ -1,6 +1,6 @@
 #pragma once
 #include "Controller.h"
-#include <max6675.h>
+#include "SPI.h"
 
 class HeatingController: public Controller{
     public:
@@ -23,10 +23,13 @@ class HeatingController: public Controller{
         void configureHeatingControllerPins(uint8_t &_zeroCrossingPin, void (*_zeroCrossingInterruptFunction)());
         ~HeatingController();
         
+        float getTemperature();
 
     private:
-        MAX6675 max6675Sensor;
-        uint8_t heatingResistorPin;    
+        uint8_t heatingResistorPin;
+        uint8_t clkPin;
+        uint8_t csPin; 
+        uint8_t soPin; 
 };
 
 

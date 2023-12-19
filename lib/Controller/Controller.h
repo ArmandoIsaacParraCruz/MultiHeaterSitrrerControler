@@ -21,6 +21,7 @@ class Controller
         void setSetpoint(double &_newSetpoint);
         void setOutputLimits(double &_min, double &_max);
         double getInput();
+        double getOutput();
         virtual void adjustOutputSignal() = 0;
         virtual void updateInput() = 0;
         virtual ~Controller() {}
