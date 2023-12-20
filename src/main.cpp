@@ -7,6 +7,7 @@ MultiHeaterStirrerController multiHeaterStirrerController{};
 void setup()
 {
   Serial.begin(115200);
+  multiHeaterStirrerController.setupMultiHeaterStirrerController();
 }
 
 void loop()
