@@ -2,8 +2,11 @@
 
 MultiHeaterStirrerController::MultiHeaterStirrerController()
 {
-   
+    for (int i = 0; i < NUMBER_OF_PLACES; ++i) {
+        heatingControllers.emplace_back(HeatingController(heatingKp[i], heatingKi[i], heatingKd[i], csMAX6675[i]));
+    }
 }
+
 
 void MultiHeaterStirrerController::setupMultiHeaterStirrerController()
 {
@@ -18,12 +21,21 @@ void MultiHeaterStirrerController::mainLoop()
     
     while (true)
     {
-        if(readOperationModeButton() == Automatic) {
+        float temp;
+        for(uint8_t i = 0; i < NUMBER_OF_PLACES; ++i) {
+            temp = heatingControllers.at(i).getTemperature();
+            Serial.print(temp);
+            Serial.println("    ");
+        }
+        delay(1000);
+
+       /* if(readOperationModeButton() == Automatic) {
             Serial.println("Automatic");
             waitForProcessesSpecificationsMessage();
+            testLoop();
         } else {
             Serial.println("Manual");
-        }
+        }*/
     }
 }
 
@@ -82,4 +94,14 @@ OperationMode MultiHeaterStirrerController::readOperationModeButton()
     } else {
         return Automatic;
     }
+}
+
+void MultiHeaterStirrerController::testLoop()
+{
+    Serial.println("testLoop");
+    while(readOperationModeButton() == Automatic) 
+    {
+        
+    }
+
 }

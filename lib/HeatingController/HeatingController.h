@@ -4,32 +4,20 @@
 
 class HeatingController: public Controller{
     public:
-        HeatingController(  uint8_t _heatingResistorPin, 
-                            double _kp,
+        HeatingController(  double _kp,
                             double _ki,
                             double _kd,
-                            uint8_t _clkPin,
-                            uint8_t _csPin, 
-                            uint8_t _soPin);
-     
-        static volatile uint32_t lastZeroCrossingTime;
-        static volatile uint32_t semicyclesCounter;
-        static const uint32_t DEBOUNCE_TIME = 8300;
-        static uint32_t maxNumberOfSemicycles;
-        static uint8_t zeroCrossingPin;
-        
+                            uint8_t _csPin);
         void adjustOutputSignal() override;
         void updateInput() override;
-        void configureHeatingControllerPins(uint8_t &_zeroCrossingPin, void (*_zeroCrossingInterruptFunction)());
-        ~HeatingController();
-        
         float getTemperature();
 
     private:
+        static const double MAX_NUMBER_OF_SEMICYCLES;
+        static const double MIN_NUMBER_OF_SEMICYCLES;
         uint8_t heatingResistorPin;
-        uint8_t clkPin;
         uint8_t csPin; 
-        uint8_t soPin; 
+        
 };
 
 

@@ -1,39 +1,25 @@
 #include "HeatingController.h"
 
-volatile uint32_t HeatingController::lastZeroCrossingTime;
-volatile uint32_t HeatingController::semicyclesCounter;
-uint32_t HeatingController::maxNumberOfSemicycles;
-uint8_t HeatingController::zeroCrossingPin;
+
+const double HeatingController::MAX_NUMBER_OF_SEMICYCLES = 120;
+const double HeatingController::MIN_NUMBER_OF_SEMICYCLES = 0;
 
 
-HeatingController::HeatingController(   uint8_t _heatingResistorPin, 
-                                        double _kp,
+HeatingController::HeatingController(   double _kp,
                                         double _ki,
                                         double _kd,
-                                        uint8_t _clkPin,
-                                        uint8_t _csPin, 
-                                        uint8_t _soPin)
+                                        uint8_t _csPin)
     : Controller(_kp, _ki, _kd)
 {
-    heatingResistorPin = _heatingResistorPin;
-    clkPin = _clkPin;
-    csPin = _csPin; 
-    soPin = _soPin; 
-    lastZeroCrossingTime = micros();
-    semicyclesCounter = 0;
-    maxNumberOfSemicycles = 120;
+    csPin = _csPin;
+    pinMode(csPin, OUTPUT);
 }
-
-
 
 void HeatingController::adjustOutputSignal()
 {
-    if(HeatingController::semicyclesCounter <= output){
-        digitalWrite(heatingResistorPin, HIGH);
-    } else {
-        digitalWrite(heatingResistorPin, LOW);
-    }
+    
 }
+
 
 void HeatingController::updateInput()
 {
@@ -42,21 +28,6 @@ void HeatingController::updateInput()
 }
 
 
-
-void HeatingController::configureHeatingControllerPins(uint8_t &_zeroCrossingPin, void (*_zeroCrossingInterruptFunction)())
-{
-    pinMode(heatingResistorPin, OUTPUT);
-    zeroCrossingPin = _zeroCrossingPin;
-    pinMode(_zeroCrossingPin, INPUT_PULLUP);
-    attachInterrupt(digitalPinToInterrupt(_zeroCrossingPin), _zeroCrossingInterruptFunction, FALLING);
-}
-
-HeatingController::~HeatingController()
-{
-    digitalWrite(heatingResistorPin, LOW);
-    pinMode(heatingResistorPin, INPUT);
-    ledcDetachPin(zeroCrossingPin);
-}
 
 float HeatingController::getTemperature()
 {
