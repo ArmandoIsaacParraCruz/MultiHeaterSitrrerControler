@@ -6,7 +6,7 @@ uint8_t RemoteCommunication_2::mac_HMI[6] = {0x40, 0x91, 0x51, 0xAB, 0x1B, 0xC0}
 
 struct ProcessesSpecificationsMessage RemoteCommunication_2::processesSpecificationsMessage;
 
-MessageStatus RemoteCommunication_2::processesSpecificationsMessageStatus;
+ProcessMessageStatus RemoteCommunication_2::processesSpecificationsMessageStatus;
 
 esp_now_peer_info_t RemoteCommunication_2::peerInfo;
 
@@ -28,7 +28,7 @@ void IRAM_ATTR RemoteCommunication_2::OnDataRecv(const uint8_t *mac, const uint8
 {
     if(len == sizeof(processesSpecificationsMessage)) {
         memcpy(&processesSpecificationsMessage, incomingData, sizeof(processesSpecificationsMessage));
-        processesSpecificationsMessageStatus = received;
+        processesSpecificationsMessageStatus = ProcessMessageStatus::Received;
         Serial.println("The processesSpecificationsMessage was received");
     }
 }
@@ -82,12 +82,12 @@ void RemoteCommunication_2::sendManualAdjustmentParameters(manualAdjustmentParam
 	}
 }
 
-MessageStatus RemoteCommunication_2::getProcessesSpecificationsMessageStatus()
+ProcessMessageStatus RemoteCommunication_2::getProcessesSpecificationsMessageStatus()
 {
     return processesSpecificationsMessageStatus;
 }
 
-void RemoteCommunication_2::setProcessesSpecificationsMessageStatus(MessageStatus status)
+void RemoteCommunication_2::setProcessesSpecificationsMessageStatus(ProcessMessageStatus status)
 {
     processesSpecificationsMessageStatus = status;
 }

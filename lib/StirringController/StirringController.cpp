@@ -22,26 +22,29 @@ StirringController::StirringController( uint8_t _motorAPin,
 
 void StirringController::adjustOutputSignal()
 {
-    noInterrupts();
-    updateInput();
-    computeOutput();
-    ledcWrite(channel, output);
-    interrupts();
+    if(controlMode == ControlMode::Automatic) {
+        noInterrupts();
+        updateInput();
+        computeOutput();
+        ledcWrite(channel, output);
+        interrupts();
+    }
+    
 }
 
 void StirringController::updateInput()
 {
-    
-    double measure = double((60.0 * 1000.0 / pulsesPerRevolution) / (millis() - lastMeasurementTime) * pulses) / 2.0;
-    input = alpha * measure + (1.0 - alpha) * input;
-    pulses = 0;
-    lastMeasurementTime= millis();
-    
+    if(controlMode == ControlMode::Automatic) {
+        double measure = double((60.0 * 1000.0 / pulsesPerRevolution) / (millis() - lastMeasurementTime) * pulses) / 2.0;
+        input = alpha * measure + (1.0 - alpha) * input;
+        pulses = 0;
+        lastMeasurementTime= millis();
+    }
 }
 
 
-void StirringController::configureStirringControllerPins(   uint32_t &_frequency, 
-                                                            uint8_t &_resolution,
+void StirringController::configureStirringControllerPins(   uint32_t _frequency, 
+                                                            uint8_t _resolution,
                                                             void (*interruptFunction)())
 {
     pinMode(encoderPhaseAPin, INPUT_PULLUP);
@@ -59,6 +62,14 @@ void StirringController::incrementPulses()
         debouncePreviousTime = micros();
     }  
 }
+
+void StirringController::adjustOutputSignalManually(uint8_t _pwmValue)
+{
+    if(controlMode == ControlMode::Manual) {
+        ledcWrite(channel, _pwmValue);
+    }
+}
+
 
 StirringController::~StirringController()
 {

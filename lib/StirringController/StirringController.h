@@ -18,9 +18,10 @@ class StirringController: public Controller{
         void adjustOutputSignal() override;
         void updateInput() override;
         void incrementPulses();
-        void configureStirringControllerPins(uint32_t &_frequency, 
-                                            uint8_t &_resolution, 
+        void configureStirringControllerPins(uint32_t _frequency, 
+                                            uint8_t _resolution, 
                                             void (*interruptFunction)());
+        void adjustOutputSignalManually(uint8_t _pwmValue);
         
         ~StirringController();
        

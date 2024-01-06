@@ -4,7 +4,7 @@
 #include <esp_now.h>
 #include "StructureMessages.h"
 
-enum MessageStatus{received, notReceived};
+enum class ProcessMessageStatus{Received, NotReceived};
 
 class RemoteCommunication_2
 {
@@ -14,10 +14,10 @@ class RemoteCommunication_2
         static void sendMeasurements(measurements& message);
         static void sendManualAdjustmentParameters(manualAdjustmentParameters& message);
         static struct ProcessesSpecificationsMessage processesSpecificationsMessage;
-        static MessageStatus getProcessesSpecificationsMessageStatus();
-        static void setProcessesSpecificationsMessageStatus(MessageStatus status);
+        static ProcessMessageStatus getProcessesSpecificationsMessageStatus();
+        static void setProcessesSpecificationsMessageStatus(ProcessMessageStatus status);
     private:
-        static MessageStatus processesSpecificationsMessageStatus;
+        static ProcessMessageStatus processesSpecificationsMessageStatus;
         static uint8_t mac_multiHeaterStirrer[6];
         static uint8_t mac_HMI[6];
         static esp_now_peer_info_t peerInfo;
