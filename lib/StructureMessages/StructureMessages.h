@@ -28,7 +28,7 @@ struct ProcessesSpecificationsMessage{
     uint8_t configuredProcesses;
 };
 
-struct measurements {
+struct Measurements {
     float temperatures[NUMBER_OF_PLACES];
     float RPM[NUMBER_OF_PLACES];
     uint32_t timeInSencods;
@@ -36,7 +36,7 @@ struct measurements {
 };
 
 
-struct  manualAdjustmentParameters{
+struct  ManualAdjustmentMeasurements{
     float temperatures[NUMBER_OF_PLACES];
     float RPM[NUMBER_OF_PLACES];
     float infraredSensorTemp;

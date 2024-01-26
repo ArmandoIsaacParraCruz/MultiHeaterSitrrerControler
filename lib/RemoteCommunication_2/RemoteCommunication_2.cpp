@@ -60,7 +60,7 @@ void RemoteCommunication_2::beginRemoteCommunication()
 }
 
 
-void RemoteCommunication_2::sendMeasurements(measurements& message)
+void RemoteCommunication_2::sendMeasurements(Measurements& message)
 {
     esp_err_t internalProcessStatus = esp_now_send(mac_HMI, (uint8_t*)&message, sizeof(message));
 	
@@ -71,7 +71,7 @@ void RemoteCommunication_2::sendMeasurements(measurements& message)
 	}
 }
 
-void RemoteCommunication_2::sendManualAdjustmentParameters(manualAdjustmentParameters &message)
+void RemoteCommunication_2::sendManualAdjustmentMeasurements(ManualAdjustmentMeasurements &message)
 {
     esp_err_t internalProcessStatus = esp_now_send(mac_HMI, (uint8_t*)&message, sizeof(message));
 	

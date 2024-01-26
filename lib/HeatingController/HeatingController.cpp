@@ -16,6 +16,11 @@ HeatingController::HeatingController(   double _kp,
     digitalWrite(csPin, HIGH);
 }
 
+void HeatingController::adjustOutputSignalManually(uint8_t _semicycles)
+{
+    
+}
+
 void HeatingController::adjustOutputSignal()
 {
     

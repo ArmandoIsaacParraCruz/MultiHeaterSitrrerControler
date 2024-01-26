@@ -10,6 +10,7 @@ class HeatingController: public Controller{
                             uint8_t _csPin);
         void adjustOutputSignal() override;
         void updateInput() override;
+        void adjustOutputSignalManually(uint8_t _semicycles);
         float getTemperature();
 
     private:

@@ -11,8 +11,8 @@ class RemoteCommunication_2
     public:
     RemoteCommunication_2() = default;
         static void beginRemoteCommunication();
-        static void sendMeasurements(measurements& message);
-        static void sendManualAdjustmentParameters(manualAdjustmentParameters& message);
+        static void sendMeasurements(Measurements& message);
+        static void sendManualAdjustmentMeasurements(ManualAdjustmentMeasurements& message);
         static struct ProcessesSpecificationsMessage processesSpecificationsMessage;
         static ProcessMessageStatus getProcessesSpecificationsMessageStatus();
         static void setProcessesSpecificationsMessageStatus(ProcessMessageStatus status);

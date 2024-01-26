@@ -7,6 +7,8 @@
 #include "StirringController.h"
 #include "RemoteCommunication_2.h"
 #include "StructureMessages.h"
+#define ONE_SECOND 1000
+#define TWO_HUNDRED_MILLISECONDS 200
 
 enum class OperationMode {Manual, Automatic };
 
@@ -23,10 +25,12 @@ class MultiHeaterStirrerController
         MultiHeaterStirrerController();
         void setupMultiHeaterStirrerController(void (*interruptFunctions[])(void));
         void mainLoop();
-
         std::vector<StirringController> stirringControllers;
 
     private:
+        std::vector<HeatingController> heatingControllers;
+        Measurements measurements;
+        ManualAdjustmentMeasurements manualAdjustmentMeasurements;
         MCP3008 adc1;
         MCP3008 adc2;
         const uint8_t ADC_1_PIN = 4;
@@ -43,9 +47,10 @@ class MultiHeaterStirrerController
         const uint16_t MAX_ADC_VALUE = 1023;
         const uint8_t MIN_LIMIT_PWM_VALUE = 0;
         const uint8_t MAX_LIMIT_PWM_VALUE = 255;
+        const uint8_t MIN_LIMIT_SEMICYCLE_VALUE = 0;
+        const uint8_t MAX_LIMIT_SEMICYCLE_VALUE = 120;
         AutomaticProcessStatus automaticProcessStatus;
         const uint8_t operationModeButtonPin = 8;
-        std::vector<HeatingController> heatingControllers;
         //StirringController stirringControllers;
         const double heatingKp[NUMBER_OF_PLACES] = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
         const double heatingKi[NUMBER_OF_PLACES] = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
@@ -60,16 +65,20 @@ class MultiHeaterStirrerController
         const uint32_t FRECUENCY = 15000;
         const uint8_t PWM_RESOLUTION = 8; 
         uint32_t lastManualStirringAdjustmentTime;
-        uint32_t lastManualPrintTime;
+        uint32_t lastManualHeatingAdjustmentTime;
+        uint32_t lastSendHMImanualAdjustmentMeasurementsTime;
         uint32_t analogReads[NUMBER_OF_PLACES];
         uint8_t pwmValues[NUMBER_OF_PLACES];
+        uint8_t semicyclesValues[NUMBER_OF_PLACES];
 
         void automaticProcess();
         void PendingDataSubmission();
         void ProcessingDataReceived();
         void AutomaticProcessInProgress();
         void manualProcess();  
-        void manualAdjustmentOfTheStirringOutputs(); 
+        void manualAdjustmentOfTheStirringOutputs();
+        void manualAdjustmentOfTheHeatingOutputs();
+        void sendHMImanualAdjustmentMeasurements();
         OperationMode readOperationModeButton();
         void testLoop();
 };
