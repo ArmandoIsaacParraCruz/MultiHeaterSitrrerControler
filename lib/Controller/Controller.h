@@ -1,7 +1,6 @@
 #pragma once
 #include <Arduino.h>
 
-enum class ControlMode{Manual, Automatic};
 
 class Controller
 {
@@ -16,7 +15,7 @@ class Controller
         double outMax;
         volatile double input;
         volatile double output;
-        ControlMode controlMode;
+        
         void computeOutput();
         
     public:
@@ -25,7 +24,6 @@ class Controller
         void setOutputLimits(double _min, double _max);
         double getInput();
         double getOutput();
-        void setControlMode(ControlMode _controlMode);
         virtual void adjustOutputSignal() = 0;
         virtual void updateInput() = 0;
         virtual ~Controller() {}

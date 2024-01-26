@@ -2,6 +2,39 @@
 #include "MultiHeaterStirrerController.h"
 
 MultiHeaterStirrerController multiHeaterStirrerController{};
+
+void IRAM_ATTR interruptFunction1()
+{
+  
+   multiHeaterStirrerController.stirringControllers.at(0).incrementPulses(); 
+}
+
+void IRAM_ATTR interruptFunction2()
+{
+	 multiHeaterStirrerController.stirringControllers.at(1).incrementPulses(); 
+}
+
+void IRAM_ATTR interruptFunction3()
+{
+	 multiHeaterStirrerController.stirringControllers.at(3).incrementPulses(); 
+}
+
+void IRAM_ATTR interruptFunction4()
+{
+	 multiHeaterStirrerController.stirringControllers.at(4).incrementPulses(); 
+}
+
+void IRAM_ATTR interruptFunction5()
+{
+	 multiHeaterStirrerController.stirringControllers.at(4).incrementPulses(); 
+}
+
+void IRAM_ATTR interruptFunction6()
+{
+	multiHeaterStirrerController.stirringControllers.at(5).incrementPulses(); 
+}
+
+
 void interruptFunction1();
 void interruptFunction2();
 void interruptFunction3();
@@ -14,6 +47,9 @@ void (*interruptFunctions[])(void)= { interruptFunction1,
                                       interruptFunction4,
                                       interruptFunction5,
                                       interruptFunction6};
+const uint8_t ENCODER_PHASE_A_PINS[NUMBER_OF_PLACES] = {1, 2, 42, 41, 40, 39};
+
+
 void setup()
 {
 	Serial.begin(115200);
@@ -26,35 +62,7 @@ void loop()
     multiHeaterStirrerController.mainLoop();
 }
 
-void interruptFunction1()
-{
-   multiHeaterStirrerController.stirringControllers.at(0).incrementPulses(); 
-}
 
-void interruptFunction2()
-{
-	 multiHeaterStirrerController.stirringControllers.at(1).incrementPulses(); 
-}
-
-void interruptFunction3()
-{
-	 multiHeaterStirrerController.stirringControllers.at(3).incrementPulses(); 
-}
-
-void interruptFunction4()
-{
-	 multiHeaterStirrerController.stirringControllers.at(4).incrementPulses(); 
-}
-
-void interruptFunction5()
-{
-	 multiHeaterStirrerController.stirringControllers.at(4).incrementPulses(); 
-}
-
-void interruptFunction6()
-{
-	 multiHeaterStirrerController.stirringControllers.at(5).incrementPulses(); 
-}
 
 
 

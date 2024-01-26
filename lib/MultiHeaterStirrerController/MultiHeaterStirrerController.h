@@ -17,7 +17,6 @@ enum class AutomaticProcessStatus {
 };
 
 
-
 class MultiHeaterStirrerController
 {
     public:
@@ -38,6 +37,7 @@ class MultiHeaterStirrerController
         const uint8_t STIRRING_ADC_2_CHANNELS[NUMBER_OF_ADC_2_CHANNELS] = {1, 3};
         const uint8_t HEATING_ADC_1_CHANNELS[NUMBER_OF_ADC_1_CHANNELS] = {0, 2, 4, 6};
         const uint8_t HEATING_ADC_2_CHANNELS[NUMBER_OF_ADC_2_CHANNELS] = {0, 2};
+        const uint8_t CS_MAX6675[NUMBER_OF_PLACES] = {6, 7, 15, 16, 17, 18};
         const uint8_t INFRAREF_HEATING_CHANNEL_SENSOR = 4;
         const uint8_t MIN_ADC_VALUE = 0;
         const uint16_t MAX_ADC_VALUE = 1023;
@@ -61,6 +61,8 @@ class MultiHeaterStirrerController
         const uint8_t PWM_RESOLUTION = 8; 
         uint32_t lastManualStirringAdjustmentTime;
         uint32_t lastManualPrintTime;
+        uint32_t analogReads[NUMBER_OF_PLACES];
+        uint8_t pwmValues[NUMBER_OF_PLACES];
 
         void automaticProcess();
         void PendingDataSubmission();
@@ -68,7 +70,6 @@ class MultiHeaterStirrerController
         void AutomaticProcessInProgress();
         void manualProcess();  
         void manualAdjustmentOfTheStirringOutputs(); 
-        void setControllersMode(ControlMode _controlMode);     
         OperationMode readOperationModeButton();
         void testLoop();
 };

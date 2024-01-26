@@ -9,26 +9,26 @@ Controller::Controller(double &_kp, double &_ki,double &_kd)
 
 void Controller::computeOutput()
 {
-    if(controlMode == ControlMode::Automatic) {
-        double error = setpoint - input;
-        iTerm += (ki * error);
-        if(iTerm > outMax){
-            iTerm = outMax;
-        } else if (iTerm < outMin){
-            iTerm = outMin;
-        }
 
-        double dInput = (input - lastInput);
-        output = kp * error + iTerm - kd * dInput;
-
-        if(output > outMax) {
-            output = outMax;
-        } else if(output < outMin) {
-            output = outMin;
-        }
-
-        lastInput = input;
+    double error = setpoint - input;
+    iTerm += (ki * error);
+    if(iTerm > outMax){
+        iTerm = outMax;
+    } else if (iTerm < outMin){
+        iTerm = outMin;
     }
+
+    double dInput = (input - lastInput);
+    output = kp * error + iTerm - kd * dInput;
+
+    if(output > outMax) {
+        output = outMax;
+    } else if(output < outMin) {
+        output = outMin;
+    }
+
+    lastInput = input;
+    
     
 }
 
@@ -53,10 +53,4 @@ double Controller::getInput()
 double Controller::getOutput()
 {
     return output;
-}
-
-
-void Controller::setControlMode(ControlMode _controlMode)
-{
-    controlMode = _controlMode;
 }

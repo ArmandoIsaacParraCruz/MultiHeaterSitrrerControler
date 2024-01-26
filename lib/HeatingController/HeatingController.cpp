@@ -13,6 +13,7 @@ HeatingController::HeatingController(   double _kp,
 {
     csPin = _csPin;
     pinMode(csPin, OUTPUT);
+    digitalWrite(csPin, HIGH);
 }
 
 void HeatingController::adjustOutputSignal()
