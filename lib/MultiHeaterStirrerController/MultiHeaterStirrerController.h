@@ -42,6 +42,8 @@ class MultiHeaterStirrerController
         const uint8_t HEATING_ADC_1_CHANNELS[NUMBER_OF_ADC_1_CHANNELS] = {0, 2, 4, 6};
         const uint8_t HEATING_ADC_2_CHANNELS[NUMBER_OF_ADC_2_CHANNELS] = {0, 2};
         const uint8_t CS_MAX6675[NUMBER_OF_PLACES] = {6, 7, 15, 16, 17, 18};
+        const uint8_t CS_POWER_HEATING_MANAGER = 10;
+        const uint8_t RESET_POWER_HEATING_MANAGER = 9;
         const uint8_t INFRAREF_HEATING_CHANNEL_SENSOR = 4;
         const uint8_t MIN_ADC_VALUE = 0;
         const uint16_t MAX_ADC_VALUE = 1023;
@@ -58,7 +60,6 @@ class MultiHeaterStirrerController
         const double stirringKp[NUMBER_OF_PLACES] = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
         const double stirringKi[NUMBER_OF_PLACES] = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
         const double stirringKd[NUMBER_OF_PLACES] = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
-        const uint8_t csMAX6675[NUMBER_OF_PLACES] = {6, 7, 15, 16, 17, 18};
         const uint8_t MOTOR_A_PINS[NUMBER_OF_PLACES] = {37, 36, 35, 47, 21, 20};
         const uint8_t ENCODER_PHASE_A_PINS[NUMBER_OF_PLACES] = {1, 2, 42, 41, 40, 39};
         const float PULSES_PER_REVOLUTION = 48.4;

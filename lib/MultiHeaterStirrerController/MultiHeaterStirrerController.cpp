@@ -35,6 +35,8 @@ void MultiHeaterStirrerController::setupMultiHeaterStirrerController(void (*inte
         stirringControllers.at(i).setSetpoint(0);
     }
 
+    HeatingController::setCsHeatingManagerPin(CS_POWER_HEATING_MANAGER);
+
     pinMode(ENCODER_PHASE_A_PINS[0], INPUT_PULLUP);
     attachInterrupt(ENCODER_PHASE_A_PINS[0], interruptFunctions[0], RISING);
     pinMode(ENCODER_PHASE_A_PINS[1], INPUT_PULLUP);
@@ -194,9 +196,7 @@ void MultiHeaterStirrerController::manualAdjustmentOfTheHeatingOutputs()
                                                                 MAX_LIMIT_SEMICYCLE_VALUE);
     }
     
-    for(uint8_t i = 0; i < NUMBER_OF_PLACES; ++i) {
-        heatingControllers.at(i).adjustOutputSignalManually(semicyclesValues[i]);
-    }
+    HeatingController::transferSemicycles(semicyclesValues);
 }
 
 void MultiHeaterStirrerController::sendHMImanualAdjustmentMeasurements()
