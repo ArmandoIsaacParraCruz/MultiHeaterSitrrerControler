@@ -31,6 +31,20 @@ void HeatingController::adjustOutputSignalManually(uint8_t semicycles){
     output = semicycles;
 }
 
+float HeatingController::getTemperature()
+{
+    uint16_t v;
+    // Leer datos
+    MCP23017::digitalWrite(cs, LOW);
+    byte msb = SPI.transfer(0x00);
+    byte lsb = SPI.transfer(0x00);
+    MCP23017::digitalWrite(cs, HIGH);
+    // Convertir bits a temperatura
+    int temperature = ((msb << 8) | lsb) >> 3;
+
+    return temperature * 0.25;
+}
+
 void HeatingController::updateInput()
 {
     uint16_t v;

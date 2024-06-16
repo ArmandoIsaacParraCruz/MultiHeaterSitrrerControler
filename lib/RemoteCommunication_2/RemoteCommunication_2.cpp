@@ -1,7 +1,6 @@
 #include "RemoteCommunication_2.h"
 
-
-uint8_t RemoteCommunication_2::mac_multiHeaterStirrer[6] = {0x34, 0x85, 0x18, 0xBD, 0x2B, 0x1C};
+uint8_t RemoteCommunication_2::mac_multiHeaterStirrer[6] = {0x48, 0x27, 0xE2, 0xD2, 0x5C, 0x80};;
 uint8_t RemoteCommunication_2::mac_HMI[6] = {0x40, 0x91, 0x51, 0xAB, 0x1B, 0xC0};
 
 struct ProcessesSpecificationsMessage RemoteCommunication_2::processesSpecificationsMessage;

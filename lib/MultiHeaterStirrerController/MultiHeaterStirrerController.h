@@ -2,7 +2,6 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <vector>
-#include <MCP3XXX.h>
 #include "HeatingController.h"
 #include "StirringController.h"
 #include "RemoteCommunication_2.h"
@@ -16,6 +15,12 @@
 #define SCL 18
 #define LED 12
 #define ZERO_CROSSING_DEBOUNCE_TIME 8
+#define MAX_SPI_CLOCK_SPEED 1350000
+#define BIT_MASK 1023
+#define SPI_TRANSFER_LEGNTH  3
+#define STIRRING_KNOBS 9
+#define HEATING_KNOBS 8
+#define ADC_INFRARRED_SENSOR 8
 
 enum class OperationMode {Manual, Automatic };
 
@@ -31,6 +36,7 @@ class MultiHeaterStirrerController
         MultiHeaterStirrerController();
         void setupMultiHeaterStirrerController(void (*interruptFunctions[])(void));
         void mainLoop();
+        void prueba();
         std::vector<StirringController> stirringControllers;
         static uint32_t zeroCrossingDebounceTimer;
         std::vector<HeatingController> heatingControllers;
@@ -39,22 +45,14 @@ class MultiHeaterStirrerController
     private:
         Measurements measurements;
         ManualAdjustmentMeasurements manualAdjustmentMeasurements;
-        //MCP3008 adc1;
-        //MCP3008 adc2;
         OperationMode operationMode;
         AutomaticProcessStatus automaticProcessStatus;
         bool blink = true;
 
-        const uint8_t ADC_1_PIN = 9;
-        const uint8_t ADC_2_PIN = 8;
-        static const uint8_t NUMBER_OF_ADC_1_CHANNELS = 4; 
-        static const uint8_t NUMBER_OF_ADC_2_CHANNELS = 4;
-        const uint8_t STIRRING_ADC_1_CHANNELS[NUMBER_OF_ADC_1_CHANNELS] = {1, 3 ,5 ,7};
-        const uint8_t STIRRING_ADC_2_CHANNELS[NUMBER_OF_ADC_2_CHANNELS] = {1, 3};
-        const uint8_t HEATING_ADC_1_CHANNELS[NUMBER_OF_ADC_1_CHANNELS] = {0, 2, 4, 6};
-        const uint8_t HEATING_ADC_2_CHANNELS[NUMBER_OF_ADC_2_CHANNELS] = {0, 2};
+        const uint8_t STIRRING_ADC_CHANNELS[NUMBER_OF_PLACES] = {0, 1, 2 ,3 ,4, 5};
+        const uint8_t HEATING_ADC_CHANNELS[NUMBER_OF_PLACES] = {2, 3, 4, 5, 6, 7};
         const uint8_t CS_MAX6675[NUMBER_OF_PLACES] = {0, 1, 2, 3, 4, 5};
-        const uint8_t INFRAREF_HEATING_CHANNEL_SENSOR = 4;
+        const uint8_t INFRAREF_HEATING_CHANNEL_SENSOR = 0;
         const uint8_t MIN_ADC_VALUE = 0;
         const uint16_t MAX_ADC_VALUE = 1023;
         const uint8_t MIN_LIMIT_PWM_VALUE = 0;
@@ -77,8 +75,8 @@ class MultiHeaterStirrerController
         const double stirringKi[NUMBER_OF_PLACES] = {0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625};
         const double stirringKd[NUMBER_OF_PLACES] = {1, 1, 1, 1, 1, 1};
         
-        const uint8_t MOTOR_A_PINS[NUMBER_OF_PLACES] = {1, 2, 42, 41, 40, 39};
-        const uint8_t ENCODER_PHASE_A_PINS[NUMBER_OF_PLACES] = {20, 21, 47, 35, 36, 37};
+        const uint8_t MOTOR_A_PINS[NUMBER_OF_PLACES] = {20, 21, 47, 35, 36, 37};
+        const uint8_t ENCODER_PHASE_A_PINS[NUMBER_OF_PLACES] = {1, 2, 42, 41, 40, 39};
         const float PULSES_PER_REVOLUTION = 70;
         const uint32_t FRECUENCY = 1000;
         const uint8_t PWM_RESOLUTION = 8; 
@@ -91,9 +89,6 @@ class MultiHeaterStirrerController
         uint32_t lastSendHMIAutomaticAdjustmentMeasurementsTime;
         uint32_t lastAutomaticProcessTime;
 
-        uint32_t analogReads[NUMBER_OF_PLACES];
-        uint8_t pwmValues[NUMBER_OF_PLACES];
-        uint8_t semicyclesValues[NUMBER_OF_PLACES];
         uint8_t currentProcess;
         
 
@@ -112,6 +107,7 @@ class MultiHeaterStirrerController
         void manualAdjustmentOfTheHeatingOutputs();
         void sendHMIManualAdjustmentMeasurements();
         OperationMode readOperationModeButton();
+        uint32_t readADC(uint8_t channel, byte adc);
         void toggle();
         
 };

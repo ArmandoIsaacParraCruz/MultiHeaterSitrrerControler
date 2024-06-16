@@ -1,4 +1,5 @@
 #include "MultiHeaterStirrerController.h"
+uint32_t MultiHeaterStirrerController::zeroCrossingDebounceTimer;
 
 MultiHeaterStirrerController::MultiHeaterStirrerController()
 {
@@ -8,16 +9,30 @@ MultiHeaterStirrerController::MultiHeaterStirrerController()
 
 void MultiHeaterStirrerController::setupMultiHeaterStirrerController(void (*interruptFunctions[])(void))
 {
+    Serial.begin(115200);
     MCP23017::begin(SDA, SCL, MCP23017_ADDRESS);
-    //adc1.begin(ADC_1_PIN);
-    //adc2.begin(ADC_2_PIN);
+
+    for (int i = 0; i < NUMBER_OF_PLACES; ++i) {
+        MCP23017::digitalWrite(CS_MAX6675[i], HIGH);
+    }
+
+    MCP23017::digitalWrite(STIRRING_KNOBS, HIGH);
+    MCP23017::digitalWrite(HEATING_KNOBS, HIGH);
+    MCP23017::digitalWrite(LED, HIGH);
+
+    SPI.begin();
 
     automaticProcessStatus = AutomaticProcessStatus::PendingDataSubmission;
+    gpio_install_isr_service(0);
+
+
     for (int i = 0; i < NUMBER_OF_PLACES; ++i) {
         stirringControllers.emplace_back(StirringController(stirringKp[i],
                                                             stirringKi[i],
                                                             stirringKd[i]));
+    }
 
+    for (int i = 0; i < NUMBER_OF_PLACES; ++i) {
         heatingControllers.emplace_back(HeatingController(  heatingKp[i], 
                                                             heatingKi[i], 
                                                             heatingKd[i],
@@ -26,6 +41,7 @@ void MultiHeaterStirrerController::setupMultiHeaterStirrerController(void (*inte
                                                             tau1[i],
                                                             tau2[i]));
     }
+    
 
     for(uint8_t i = 0; i < NUMBER_OF_PLACES; ++i) {
         stirringControllers.at(i).begin(MOTOR_A_PINS[i], 
@@ -35,24 +51,16 @@ void MultiHeaterStirrerController::setupMultiHeaterStirrerController(void (*inte
                                         FRECUENCY,
                                         PWM_RESOLUTION,
                                         interruptFunctions[i]);
-        stirringControllers.at(i).setOutputLimits(0.0, 255.0);
+        stirringControllers.at(i).setOutputLimits(double(MIN_LIMIT_PWM_VALUE), double(MAX_LIMIT_PWM_VALUE));
         stirringControllers.at(i).setSetpoint(0);
 
         heatingControllers.at(i).begin(RESISTORS_PINS[i], CS_MAX6675[i]);
+        heatingControllers.at(i).setOutputLimits(MIN_LIMIT_SEMICYCLE_VALUE, MAX_LIMIT_SEMICYCLE_VALUE);
+        heatingControllers.at(i).setSetpoint(0);
     }
 
-    pinMode(ENCODER_PHASE_A_PINS[0], INPUT_PULLUP);
-    attachInterrupt(ENCODER_PHASE_A_PINS[0], interruptFunctions[0], RISING);
-    pinMode(ENCODER_PHASE_A_PINS[1], INPUT_PULLUP);
-    attachInterrupt(ENCODER_PHASE_A_PINS[1], interruptFunctions[1], RISING);
-    pinMode(ENCODER_PHASE_A_PINS[2], INPUT_PULLUP);
-    attachInterrupt(ENCODER_PHASE_A_PINS[2], interruptFunctions[2], RISING);
-    pinMode(ENCODER_PHASE_A_PINS[3], INPUT_PULLUP);
-    attachInterrupt(ENCODER_PHASE_A_PINS[3], interruptFunctions[3], RISING);
-    pinMode(ENCODER_PHASE_A_PINS[4], INPUT_PULLUP);
-    attachInterrupt(ENCODER_PHASE_A_PINS[4], interruptFunctions[4], RISING);
-    pinMode(ENCODER_PHASE_A_PINS[5], INPUT_PULLUP);
-    attachInterrupt(ENCODER_PHASE_A_PINS[5], interruptFunctions[5], RISING);
+
+    
     
     pinMode(ZERO_CROSSING_PIN, INPUT_PULLUP);
     attachInterrupt(ZERO_CROSSING_PIN, interruptFunctions[6], RISING);
@@ -65,7 +73,22 @@ void MultiHeaterStirrerController::setupMultiHeaterStirrerController(void (*inte
     lastManualStirringAdjustmentTime = millis();
     lastManualHeatingAdjustmentTime = millis();
     lastSendHMIManualAdjustmentMeasurementsTime = millis();
+    zeroCrossingDebounceTimer = millis();
     Serial.println("READY_SETUP");
+
+    uint8_t mac[6];
+    esp_read_mac(mac, ESP_MAC_WIFI_STA);
+
+    // Imprimir la dirección MAC en el formato requerido
+    Serial.print("uint8_t RemoteCommunication_2::mac_HMI[6] = {");
+    for (int i = 0; i < 6; i++) {
+        Serial.print("0x");
+        Serial.print(mac[i], HEX);
+        if (i < 5) {
+        Serial.print(", ");
+        }
+    }
+    Serial.println("};");
 }
 
 void MultiHeaterStirrerController::resetSettings()
@@ -143,9 +166,9 @@ void MultiHeaterStirrerController::ProcessingDataReceived()
     }
     Serial.println("");
 
-    Serial.println("processDuration: ");
+    Serial.print("processDuration: ");
     for(uint8_t i = 0; i < NUMBER_OF_PROCESS; ++i) {
-        Serial.print(RemoteCommunication_2::processesSpecificationsMessage.stirringSetpoints[i]);
+        Serial.print(RemoteCommunication_2::processesSpecificationsMessage.processDuration[i]);
         Serial.print(" ");
     }
     Serial.println("");
@@ -171,6 +194,7 @@ void MultiHeaterStirrerController::updatingSetponts()
             Serial.print(RemoteCommunication_2::processesSpecificationsMessage.stirringSetpoints[currentProcess]);
             Serial.print(" ");
             stirringControllers.at(i).setSetpoint(RemoteCommunication_2::processesSpecificationsMessage.stirringSetpoints[currentProcess]);
+            heatingControllers.at(i).setSetpoint(RemoteCommunication_2::processesSpecificationsMessage.temperatureSetpoints[currentProcess].initialTemperature);
         }
     }
     Serial.println();
@@ -195,7 +219,6 @@ void MultiHeaterStirrerController::AutomaticProcessInProgress()
 
     if(millis() - lastSendHMIAutomaticAdjustmentMeasurementsTime  >= ONE_SECOND) {
         sendHMIAutomaticProcessesMeasurements();
-        Serial.println();
         lastSendHMIAutomaticAdjustmentMeasurementsTime  = millis();
     }
     
@@ -220,7 +243,8 @@ void MultiHeaterStirrerController::produceStirringPIDOutputs()
 {
     for(uint8_t i = 0; i < NUMBER_OF_PLACES; ++i) {
         if(RemoteCommunication_2::processesSpecificationsMessage.selectedPlaces[i]) {
-           stirringControllers.at(i).adjustOutputSignal();
+            stirringControllers.at(i).updateInput();
+            stirringControllers.at(i).adjustOutputSignal();
         }
     }
 }
@@ -231,13 +255,18 @@ void MultiHeaterStirrerController::produceHeatingPIDOutputs()
         if(RemoteCommunication_2::processesSpecificationsMessage.selectedPlaces[i]) {
            heatingControllers.at(i).updateInput();
         }
+        Serial.print(heatingControllers.at(i).getInput());
+        Serial.print(" "); 
+        Serial.print(heatingControllers.at(i).getOutput());
+        Serial.print(" ");
     }
+    Serial.println();
 }
 
 
 void MultiHeaterStirrerController::sendHMIAutomaticProcessesMeasurements()
 {
-    measurements.infraredSensorTemp = adc2.analogRead(INFRAREF_HEATING_CHANNEL_SENSOR);
+    measurements.infraredSensorTemp = readADC(INFRAREF_HEATING_CHANNEL_SENSOR, ADC_INFRARRED_SENSOR);
     for(uint8_t i = 0; i < NUMBER_OF_PLACES; ++i) {
         measurements.RPM[i] = stirringControllers.at(i).getInput();
         measurements.temperatures[i] = heatingControllers.at(i).getInput();
@@ -251,8 +280,8 @@ void MultiHeaterStirrerController::manualProcess()
 {
     if(millis() - lastManualStirringAdjustmentTime >= TWO_HUNDRED_MILLISECONDS) {
         manualAdjustmentOfTheStirringOutputs();
-        Serial.println(stirringControllers.at(0).getInput());
         lastManualStirringAdjustmentTime = millis();
+        toggle();
     }
 
     if(millis() - lastManualHeatingAdjustmentTime >= ONE_SECOND) {
@@ -269,55 +298,44 @@ void MultiHeaterStirrerController::manualProcess()
 
 void MultiHeaterStirrerController::manualAdjustmentOfTheStirringOutputs()
 {
-    for(uint8_t i = 0; i < NUMBER_OF_ADC_1_CHANNELS; ++i) {
-        analogReads[i] = adc1.analogRead(STIRRING_ADC_1_CHANNELS[i]);
-        pwmValues[i] = map(analogReads[i], MIN_ADC_VALUE, MAX_ADC_VALUE, MIN_LIMIT_PWM_VALUE, MAX_LIMIT_PWM_VALUE);
-    }
-
-    for(uint8_t i = 0; i < NUMBER_OF_ADC_2_CHANNELS; ++i) {
-        analogReads[i + NUMBER_OF_ADC_1_CHANNELS] = adc2.analogRead(STIRRING_ADC_2_CHANNELS[i]);
-        pwmValues[i + NUMBER_OF_ADC_1_CHANNELS] = map(    analogReads[i + NUMBER_OF_ADC_1_CHANNELS], 
-                                                            MIN_ADC_VALUE, MAX_ADC_VALUE, 
-                                                            MIN_LIMIT_PWM_VALUE, 
-                                                            MAX_LIMIT_PWM_VALUE);
-    }
-    
+    uint8_t pwmValue;
     for(uint8_t i = 0; i < NUMBER_OF_PLACES; ++i) {
-        stirringControllers.at(i).adjustOutputSignalManually(pwmValues[i]);
+        pwmValue = map( readADC(STIRRING_ADC_CHANNELS[i], STIRRING_KNOBS), 
+                            MIN_ADC_VALUE, 
+                            MAX_ADC_VALUE, 
+                            MIN_LIMIT_PWM_VALUE, 
+                            MAX_LIMIT_PWM_VALUE);
+        stirringControllers.at(i).updateInput();
+        stirringControllers.at(i).adjustOutputSignalManually(pwmValue);
     }
-
 }
 
 void MultiHeaterStirrerController::manualAdjustmentOfTheHeatingOutputs()
 {
-    for(uint8_t i = 0; i < NUMBER_OF_ADC_1_CHANNELS; ++i) {
-        analogReads[i] = adc1.analogRead(HEATING_ADC_1_CHANNELS[i]);
-        semicyclesValues[i] = map(analogReads[i], MIN_ADC_VALUE, MAX_ADC_VALUE, MIN_LIMIT_SEMICYCLE_VALUE, MAX_LIMIT_SEMICYCLE_VALUE);
-    }
-
-    for(uint8_t i = 0; i < NUMBER_OF_ADC_2_CHANNELS; ++i) {
-        analogReads[i + NUMBER_OF_ADC_1_CHANNELS] = adc2.analogRead(HEATING_ADC_2_CHANNELS[i]);
-        semicyclesValues[i + NUMBER_OF_ADC_1_CHANNELS] = map(    analogReads[i + NUMBER_OF_ADC_1_CHANNELS], 
-                                                                MIN_ADC_VALUE, MAX_ADC_VALUE, 
-                                                                MIN_LIMIT_SEMICYCLE_VALUE, 
-                                                                MAX_LIMIT_SEMICYCLE_VALUE);
-    }
-
+    uint8_t semicyclesValue;
     for(uint8_t i = 0; i < NUMBER_OF_PLACES; ++i) {
-        heatingControllers.at(i).adjustOutputSignalManually(semicyclesValues[i]);
+        semicyclesValue = map( readADC(HEATING_ADC_CHANNELS[i], HEATING_KNOBS), 
+                            MIN_ADC_VALUE, 
+                            MAX_ADC_VALUE, 
+                            MIN_LIMIT_SEMICYCLE_VALUE, 
+                            MAX_LIMIT_SEMICYCLE_VALUE);
+
+        heatingControllers.at(i).adjustOutputSignalManually(semicyclesValue);
+        Serial.print(semicyclesValue); Serial.print(" ");Serial.print(heatingControllers.at(i).getOutput());Serial.print("  ;");
     }
+    Serial.println();
 }
 
 void MultiHeaterStirrerController::sendHMIManualAdjustmentMeasurements()
 {
-    manualAdjustmentMeasurements.infraredSensorTemp = adc2.analogRead(INFRAREF_HEATING_CHANNEL_SENSOR);
+    manualAdjustmentMeasurements.infraredSensorTemp = readADC(INFRAREF_HEATING_CHANNEL_SENSOR, ADC_INFRARRED_SENSOR);
     for(uint8_t i = 0; i < NUMBER_OF_PLACES; ++i) {
         manualAdjustmentMeasurements.RPM[i] = stirringControllers.at(i).getInput();
-        manualAdjustmentMeasurements.temperatures[i] = heatingControllers.at(i).getInput();
+        manualAdjustmentMeasurements.temperatures[i] = heatingControllers.at(i).getTemperature();
     }
     RemoteCommunication_2::sendManualAdjustmentMeasurements(manualAdjustmentMeasurements);
+    
 }
-
 
 OperationMode MultiHeaterStirrerController::readOperationModeButton()
 {
@@ -326,6 +344,23 @@ OperationMode MultiHeaterStirrerController::readOperationModeButton()
     } else {
         return OperationMode::Automatic;
     }
+}
+
+uint32_t MultiHeaterStirrerController::readADC(uint8_t channel, byte adc)
+{
+    uint8_t data[SPI_TRANSFER_LEGNTH];
+    data[0] = 0b00000001;
+    data[1] = 0b10000000 | (channel << 4);
+    SPI.beginTransaction(SPISettings(MAX_SPI_CLOCK_SPEED, MSBFIRST, SPI_MODE0));
+    MCP23017::digitalWrite(adc, LOW);
+    for (size_t i = 0; i < SPI_TRANSFER_LEGNTH; ++i)
+    {
+    data[i] = SPI.transfer(data[i]);
+    }
+
+    SPI.endTransaction();
+    MCP23017::digitalWrite(adc, HIGH);
+    return ((data[SPI_TRANSFER_LEGNTH - 2] << 8) | data[SPI_TRANSFER_LEGNTH - 1]) & BIT_MASK;
 }
 
 void MultiHeaterStirrerController::toggle()
@@ -338,4 +373,12 @@ void MultiHeaterStirrerController::toggle()
     blink = !blink;
 }
 
+
+void MultiHeaterStirrerController::prueba()
+{
+    delay(1000);
+    heatingControllers.at(0).adjustOutputSignalManually(120);
+    Serial.println(heatingControllers.at(0).getTemperature());
+    toggle();
+}
 

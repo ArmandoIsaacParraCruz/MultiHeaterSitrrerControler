@@ -21,8 +21,6 @@ void (*interruptFunctions[])(void)= { interruptFunction1,
 
 void setup()
 {
-	Serial.begin(115200);
-	SPI.begin();
 	multiHeaterStirrerController.setupMultiHeaterStirrerController(interruptFunctions);
 }
 
@@ -65,11 +63,10 @@ void IRAM_ATTR interruptFunction6()
 
 void IRAM_ATTR zeroCrossingDetection() {
   if(millis() - MultiHeaterStirrerController::zeroCrossingDebounceTimer >= ZERO_CROSSING_DEBOUNCE_TIME) {
-    
-    if(HeatingController::getSemicyclesCounter() > multiHeaterStirrerController.MAX_LIMIT_SEMICYCLE_VALUE) {
-      HeatingController::setSemicyclesCounter(multiHeaterStirrerController.MIN_LIMIT_SEMICYCLE_VALUE);
+    if(HeatingController::semicyclesCounter >= 120) {
+      HeatingController::semicyclesCounter = 0;
     } else {
-      HeatingController::incrementSemicyclesCounter();
+      ++HeatingController::semicyclesCounter;
     }
 
     for(uint8_t i = 0; i < NUMBER_OF_PLACES; ++i) {
