@@ -1,28 +1,27 @@
 #pragma once
+#include <Wire.h>
+#include <SPI.h>
 #include "Controller.h"
-#include "SPI.h"
+#include "MCP23017.h"
 
 class HeatingController: public Controller{
     public:
-        HeatingController(  double _kp,
-                            double _ki,
-                            double _kd,
-                            uint8_t _csPin);
+        HeatingController(double _kp, double _ki, double _kd, double _alpha, double _beta, double _tau1, double _tau2);
+        void begin(uint8_t _heatingResistorPin, uint8_t cs);
         void adjustOutputSignal() override;
+        void adjustOutputSignalManually(uint8_t semicycles);
         void updateInput() override;
-        static void setCsHeatingManagerPin(uint8_t _csHeatingManager);
-        float getTemperature();
-        static void transferSemicycles(uint8_t semicycles[NUMBER_OF_PLACES]);
+        uint8_t getSemicyclesCounter();
+        void setSemicyclesCounter(uint8_t value);
+        void incrementSemicyclesCounter();
         
 
     private:
-        static const double MAX_NUMBER_OF_SEMICYCLES;
-        static const double MIN_NUMBER_OF_SEMICYCLES;
-        uint8_t csPin;
-        static uint8_t csHeatingManager;
-        static const char startCommunicationFlag; 
-        
-        
+        uint8_t heatingResistorPin;
+        uint8_t cs;
+        static volatile uint8_t semicyclesCounter;
+        double alpha, beta, tau1, tau2;
+         double applyLeadLagCompensation(double pidOutput, double error);
 };
 
 

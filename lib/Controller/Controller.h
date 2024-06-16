@@ -1,7 +1,5 @@
 #pragma once
 #include <Arduino.h>
-#include <StructureMessages.h>
-
 
 class Controller
 {
@@ -16,6 +14,7 @@ class Controller
         double outMax;
         volatile double input;
         volatile double output;
+        void reset();
         
         void computeOutput();
         

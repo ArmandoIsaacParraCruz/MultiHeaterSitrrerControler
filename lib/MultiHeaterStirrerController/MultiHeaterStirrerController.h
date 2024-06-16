@@ -33,6 +33,7 @@ class MultiHeaterStirrerController
         ManualAdjustmentMeasurements manualAdjustmentMeasurements;
         MCP3008 adc1;
         MCP3008 adc2;
+        OperationMode operationMode;
         const uint8_t ADC_1_PIN = 4;
         const uint8_t ADC_2_PIN = 5;
         static const uint8_t NUMBER_OF_ADC_1_CHANNELS = 4; 
@@ -54,34 +55,48 @@ class MultiHeaterStirrerController
         AutomaticProcessStatus automaticProcessStatus;
         const uint8_t operationModeButtonPin = 8;
         //StirringController stirringControllers;
-        const double heatingKp[NUMBER_OF_PLACES] = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
-        const double heatingKi[NUMBER_OF_PLACES] = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
-        const double heatingKd[NUMBER_OF_PLACES] = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
-        const double stirringKp[NUMBER_OF_PLACES] = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
-        const double stirringKi[NUMBER_OF_PLACES] = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
-        const double stirringKd[NUMBER_OF_PLACES] = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
+        const double heatingKp[NUMBER_OF_PLACES] = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
+        const double heatingKi[NUMBER_OF_PLACES] = {0.01, 0.01, 0.01, 0.01, 0.01, 0.01};
+        const double heatingKd[NUMBER_OF_PLACES] = {0.01, 0.01, 0.01, 0.01, 0.01, 0.01};
+        const double stirringKp[NUMBER_OF_PLACES] = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
+        const double stirringKi[NUMBER_OF_PLACES] = {0.01, 0.01, 0.01, 0.01, 0.01, 0.01};
+        const double stirringKd[NUMBER_OF_PLACES] = {0.01, 0.01, 0.01, 0.01, 0.01, 0.01};
         const uint8_t MOTOR_A_PINS[NUMBER_OF_PLACES] = {37, 36, 35, 47, 21, 20};
         const uint8_t ENCODER_PHASE_A_PINS[NUMBER_OF_PLACES] = {1, 2, 42, 41, 40, 39};
         const float PULSES_PER_REVOLUTION = 48.4;
         const uint32_t FRECUENCY = 15000;
         const uint8_t PWM_RESOLUTION = 8; 
+
+        uint32_t lastAutomaticStirringAdjustmentTime;
         uint32_t lastManualStirringAdjustmentTime;
+        uint32_t lastAutomaticHeatingAdjustmentTime;
         uint32_t lastManualHeatingAdjustmentTime;
-        uint32_t lastSendHMImanualAdjustmentMeasurementsTime;
+        uint32_t lastSendHMIManualAdjustmentMeasurementsTime;
+        uint32_t lastSendHMIAutomaticAdjustmentMeasurementsTime;
+        uint32_t lastAutomaticProcessTime;
+
         uint32_t analogReads[NUMBER_OF_PLACES];
         uint8_t pwmValues[NUMBER_OF_PLACES];
         uint8_t semicyclesValues[NUMBER_OF_PLACES];
+        uint8_t currentProcess;
+        
 
+        void resetSettings();
         void automaticProcess();
         void PendingDataSubmission();
         void ProcessingDataReceived();
         void AutomaticProcessInProgress();
+        void updatingSetponts();
+        void evaluateProcessDuration();
+        void produceHeatingPIDOutputs();
+        void produceStirringPIDOutputs();
+        void sendHMIAutomaticProcessesMeasurements();
         void manualProcess();  
         void manualAdjustmentOfTheStirringOutputs();
         void manualAdjustmentOfTheHeatingOutputs();
-        void sendHMImanualAdjustmentMeasurements();
+        void sendHMIManualAdjustmentMeasurements();
         OperationMode readOperationModeButton();
-        void testLoop();
+        
 };
 
 

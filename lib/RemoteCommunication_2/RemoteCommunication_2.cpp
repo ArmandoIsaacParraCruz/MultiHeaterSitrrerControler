@@ -17,9 +17,9 @@ esp_now_peer_info_t RemoteCommunication_2::peerInfo;
 void RemoteCommunication_2::OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
 {
     if (status == ESP_NOW_SEND_SUCCESS) {
-    	Serial.println("Delivery Success");
+    //	Serial.println("Delivery Success");
     } else {
-    	Serial.println("Delivery Fail");
+    //	Serial.println("Delivery Fail");
     }
 
 }
@@ -76,9 +76,9 @@ void RemoteCommunication_2::sendManualAdjustmentMeasurements(ManualAdjustmentMea
     esp_err_t internalProcessStatus = esp_now_send(mac_HMI, (uint8_t*)&message, sizeof(message));
 	
     if(internalProcessStatus == ESP_OK) {
-        Serial.println("Internal Process to send data was succeed");
+    //    Serial.println("Internal Process to send data was succeed");
     } else {
-		Serial.println("Internal Process to send data failed");
+	//	Serial.println("Internal Process to send data failed");
 	}
 }
 

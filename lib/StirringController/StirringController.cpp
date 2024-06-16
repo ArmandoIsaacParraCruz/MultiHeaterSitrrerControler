@@ -1,28 +1,28 @@
 #include "StirringController.h"
 
-StirringController::StirringController( uint8_t _motorAPin, 
-                                        uint8_t _encoderPhaseAPin,
-                                        uint8_t _channel,
-                                        float _pulsesPerRevolution,
-                                        uint32_t _frequency, 
-                                        uint8_t _resolution, 
-                                        void (*interruptFunction)(),
-                                        double _kp,
-                                        double _ki,
-                                        double _kd)
+StirringController::StirringController(double _kp, double _ki, double _kd)
     : Controller(_kp, _ki, _kd)
+{
+    
+}
+
+
+void StirringController::begin( uint8_t _motorAPin, 
+                                uint8_t _encoderPhaseAPin,
+                                uint8_t _channel,
+                                float _pulsesPerRevolution,
+                                uint32_t _frequency, 
+                                uint8_t _resolution, 
+                                void (*interruptFunction)())
 {
     motorAPin = _motorAPin;
     encoderPhaseAPin = _encoderPhaseAPin;
     channel = _channel;
     pulsesPerRevolution = _pulsesPerRevolution;
     pulses = 0;
-    /*
-    It does no work... :'C
-    pinMode(encoderPhaseAPin, INPUT_PULLUP);
-    attachInterrupt(encoderPhaseAPin, interruptFunction, RISING);
-    */
     pinMode(motorAPin, OUTPUT);
+    pinMode(encoderPhaseAPin, INPUT_PULLUP);
+    attachInterrupt(encoderPhaseAPin, interruptFunction, FALLING);
     analogWriteResolution(_resolution); 
     analogWriteFrequency(_frequency);
     debouncePreviousTime = micros();
@@ -34,9 +34,8 @@ StirringController::StirringController( uint8_t _motorAPin,
 
 void StirringController::adjustOutputSignal()
 {
-    updateInput();
     computeOutput();
-    ledcWrite(channel, output);
+    analogWrite(motorAPin, output);;
 }
 
 void StirringController::updateInput()
@@ -53,7 +52,7 @@ void StirringController::incrementPulses()
 
     if(micros() - debouncePreviousTime > DEBOUNCE_TIME){
         ++pulses;
-        debouncePreviousTime = micros();
+       debouncePreviousTime = micros();
     }  
 }
 
@@ -61,8 +60,8 @@ void StirringController::incrementPulses()
 
 void StirringController::adjustOutputSignalManually(uint8_t _pwmValue)
 {
-    updateInput();
-    analogWrite(motorAPin, _pwmValue);
+    output = _pwmValue;
+    analogWrite(motorAPin, output);
 }
 
 
