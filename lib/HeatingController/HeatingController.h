@@ -11,9 +11,9 @@ class HeatingController: public Controller{
         void adjustOutputSignal() override;
         void adjustOutputSignalManually(uint8_t semicycles);
         void updateInput() override;
-        uint8_t getSemicyclesCounter();
-        void setSemicyclesCounter(uint8_t value);
-        void incrementSemicyclesCounter();
+        static uint8_t getSemicyclesCounter();
+        static void setSemicyclesCounter(uint8_t value);
+        static void incrementSemicyclesCounter();
         
 
     private:

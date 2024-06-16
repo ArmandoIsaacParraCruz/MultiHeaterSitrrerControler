@@ -8,12 +8,14 @@ void interruptFunction3();
 void interruptFunction4();
 void interruptFunction5();
 void interruptFunction6();
+void zeroCrossingDetection();
 void (*interruptFunctions[])(void)= { interruptFunction1, 
                                       interruptFunction2,
                                       interruptFunction3,
                                       interruptFunction4,
                                       interruptFunction5,
-                                      interruptFunction6};
+                                      interruptFunction6,
+                                      zeroCrossingDetection};
 
 
 
@@ -59,6 +61,23 @@ void IRAM_ATTR interruptFunction5()
 void IRAM_ATTR interruptFunction6()
 {
 	multiHeaterStirrerController.stirringControllers.at(5).incrementPulses(); 
+}
+
+void IRAM_ATTR zeroCrossingDetection() {
+  if(millis() - MultiHeaterStirrerController::zeroCrossingDebounceTimer >= ZERO_CROSSING_DEBOUNCE_TIME) {
+    
+    if(HeatingController::getSemicyclesCounter() > multiHeaterStirrerController.MAX_LIMIT_SEMICYCLE_VALUE) {
+      HeatingController::setSemicyclesCounter(multiHeaterStirrerController.MIN_LIMIT_SEMICYCLE_VALUE);
+    } else {
+      HeatingController::incrementSemicyclesCounter();
+    }
+
+    for(uint8_t i = 0; i < NUMBER_OF_PLACES; ++i) {
+      multiHeaterStirrerController.heatingControllers.at(i).adjustOutputSignal();
+    }
+
+    MultiHeaterStirrerController::zeroCrossingDebounceTimer = millis();
+  }
 }
 
 

@@ -8,34 +8,38 @@ MultiHeaterStirrerController::MultiHeaterStirrerController()
 
 void MultiHeaterStirrerController::setupMultiHeaterStirrerController(void (*interruptFunctions[])(void))
 {
-    adc1.begin(ADC_1_PIN);
-    adc2.begin(ADC_2_PIN);
+    MCP23017::begin(SDA, SCL, MCP23017_ADDRESS);
+    //adc1.begin(ADC_1_PIN);
+    //adc2.begin(ADC_2_PIN);
 
     automaticProcessStatus = AutomaticProcessStatus::PendingDataSubmission;
     for (int i = 0; i < NUMBER_OF_PLACES; ++i) {
-        stirringControllers.emplace_back(StirringController(    MOTOR_A_PINS[i], 
-                                                                ENCODER_PHASE_A_PINS[i], 
-                                                                i, 
-                                                                PULSES_PER_REVOLUTION,
-                                                                FRECUENCY,
-                                                                PWM_RESOLUTION,
-                                                                interruptFunctions[i], 
-                                                                stirringKp[i],
-                                                                stirringKi[i],
-                                                                stirringKd[i]));
+        stirringControllers.emplace_back(StirringController(stirringKp[i],
+                                                            stirringKi[i],
+                                                            stirringKd[i]));
 
         heatingControllers.emplace_back(HeatingController(  heatingKp[i], 
                                                             heatingKi[i], 
-                                                            heatingKd[i], 
-                                                            CS_MAX6675[i]));
+                                                            heatingKd[i],
+                                                            alpha[i],
+                                                            beta[i],
+                                                            tau1[i],
+                                                            tau2[i]));
     }
 
     for(uint8_t i = 0; i < NUMBER_OF_PLACES; ++i) {
+        stirringControllers.at(i).begin(MOTOR_A_PINS[i], 
+                                        ENCODER_PHASE_A_PINS[i], 
+                                        i, 
+                                        PULSES_PER_REVOLUTION,
+                                        FRECUENCY,
+                                        PWM_RESOLUTION,
+                                        interruptFunctions[i]);
         stirringControllers.at(i).setOutputLimits(0.0, 255.0);
         stirringControllers.at(i).setSetpoint(0);
-    }
 
-    HeatingController::setHeatingManagerPins(CS_POWER_HEATING_MANAGER, RESET_POWER_HEATING_MANAGER);
+        heatingControllers.at(i).begin(RESISTORS_PINS[i], CS_MAX6675[i]);
+    }
 
     pinMode(ENCODER_PHASE_A_PINS[0], INPUT_PULLUP);
     attachInterrupt(ENCODER_PHASE_A_PINS[0], interruptFunctions[0], RISING);
@@ -49,10 +53,11 @@ void MultiHeaterStirrerController::setupMultiHeaterStirrerController(void (*inte
     attachInterrupt(ENCODER_PHASE_A_PINS[4], interruptFunctions[4], RISING);
     pinMode(ENCODER_PHASE_A_PINS[5], INPUT_PULLUP);
     attachInterrupt(ENCODER_PHASE_A_PINS[5], interruptFunctions[5], RISING);
+    
+    pinMode(ZERO_CROSSING_PIN, INPUT_PULLUP);
+    attachInterrupt(ZERO_CROSSING_PIN, interruptFunctions[6], RISING);
 
-
-
-    pinMode(operationModeButtonPin, INPUT);
+    pinMode(operationModeButtonPin, INPUT_PULLUP);
     operationMode = readOperationModeButton();
     RemoteCommunication_2::beginRemoteCommunication();
     RemoteCommunication_2::setProcessesSpecificationsMessageStatus(ProcessMessageStatus::NotReceived);
@@ -70,13 +75,11 @@ void MultiHeaterStirrerController::resetSettings()
     }
     automaticProcessStatus = AutomaticProcessStatus::PendingDataSubmission;
     RemoteCommunication_2::setProcessesSpecificationsMessageStatus(ProcessMessageStatus::NotReceived);
-    HeatingController::resetHeatingManager();
 }
 
 void MultiHeaterStirrerController::mainLoop()
 {
     if(operationMode != readOperationModeButton()) {
-        HeatingController::resetHeatingManager();
         ESP.restart();
     } else if(operationMode == OperationMode::Automatic) {
         automaticProcess();
@@ -224,7 +227,11 @@ void MultiHeaterStirrerController::produceStirringPIDOutputs()
 
 void MultiHeaterStirrerController::produceHeatingPIDOutputs()
 {
-
+    for(uint8_t i = 0; i < NUMBER_OF_PLACES; ++i) {
+        if(RemoteCommunication_2::processesSpecificationsMessage.selectedPlaces[i]) {
+           heatingControllers.at(i).updateInput();
+        }
+    }
 }
 
 
@@ -233,7 +240,7 @@ void MultiHeaterStirrerController::sendHMIAutomaticProcessesMeasurements()
     measurements.infraredSensorTemp = adc2.analogRead(INFRAREF_HEATING_CHANNEL_SENSOR);
     for(uint8_t i = 0; i < NUMBER_OF_PLACES; ++i) {
         measurements.RPM[i] = stirringControllers.at(i).getInput();
-        measurements.temperatures[i] = heatingControllers.at(i).getTemperature();
+        measurements.temperatures[i] = heatingControllers.at(i).getInput();
     }
     measurements.timeInSencods = (millis() - lastAutomaticProcessTime) / 1000;
     RemoteCommunication_2::sendMeasurements(measurements);
@@ -295,8 +302,10 @@ void MultiHeaterStirrerController::manualAdjustmentOfTheHeatingOutputs()
                                                                 MIN_LIMIT_SEMICYCLE_VALUE, 
                                                                 MAX_LIMIT_SEMICYCLE_VALUE);
     }
-    
-    HeatingController::transferSemicycles(semicyclesValues);
+
+    for(uint8_t i = 0; i < NUMBER_OF_PLACES; ++i) {
+        heatingControllers.at(i).adjustOutputSignalManually(semicyclesValues[i]);
+    }
 }
 
 void MultiHeaterStirrerController::sendHMIManualAdjustmentMeasurements()
@@ -304,7 +313,7 @@ void MultiHeaterStirrerController::sendHMIManualAdjustmentMeasurements()
     manualAdjustmentMeasurements.infraredSensorTemp = adc2.analogRead(INFRAREF_HEATING_CHANNEL_SENSOR);
     for(uint8_t i = 0; i < NUMBER_OF_PLACES; ++i) {
         manualAdjustmentMeasurements.RPM[i] = stirringControllers.at(i).getInput();
-        manualAdjustmentMeasurements.temperatures[i] = heatingControllers.at(i).getTemperature();
+        manualAdjustmentMeasurements.temperatures[i] = heatingControllers.at(i).getInput();
     }
     RemoteCommunication_2::sendManualAdjustmentMeasurements(manualAdjustmentMeasurements);
 }
@@ -317,6 +326,16 @@ OperationMode MultiHeaterStirrerController::readOperationModeButton()
     } else {
         return OperationMode::Automatic;
     }
+}
+
+void MultiHeaterStirrerController::toggle()
+{
+    if(blink) {
+    MCP23017::digitalWrite(LED, HIGH);
+    } else {
+    MCP23017::digitalWrite(LED, LOW);
+    }
+    blink = !blink;
 }
 
 
