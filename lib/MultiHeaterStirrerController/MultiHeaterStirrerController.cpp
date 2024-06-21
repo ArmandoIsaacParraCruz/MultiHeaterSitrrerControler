@@ -189,12 +189,20 @@ void MultiHeaterStirrerController::ProcessingDataReceived()
 void MultiHeaterStirrerController::updatingSetponts()
 {
     Serial.println("updating setpoints");
+    bool once = true;
     for(uint8_t i = 0; i < NUMBER_OF_PLACES; ++i) {
         if(RemoteCommunication_2::processesSpecificationsMessage.selectedPlaces[i]) {
             Serial.print(RemoteCommunication_2::processesSpecificationsMessage.stirringSetpoints[currentProcess]);
             Serial.print(" ");
             stirringControllers.at(i).setSetpoint(RemoteCommunication_2::processesSpecificationsMessage.stirringSetpoints[currentProcess]);
-            heatingControllers.at(i).setSetpoint(RemoteCommunication_2::processesSpecificationsMessage.temperatureSetpoints[currentProcess].initialTemperature);
+            
+            if(RemoteCommunication_2::processesSpecificationsMessage.temperatureSetpoints[currentProcess].tempFunction == ramp && once) {
+                generateRampSetponts();
+                once = false;
+            } else {
+                heatingControllers.at(i).setSetpoint(RemoteCommunication_2::processesSpecificationsMessage.temperatureSetpoints[currentProcess].initialTemperature);
+            }
+           
         }
     }
     Serial.println();
@@ -251,14 +259,24 @@ void MultiHeaterStirrerController::produceStirringPIDOutputs()
 
 void MultiHeaterStirrerController::produceHeatingPIDOutputs()
 {
+    float rampSetpoint;
+    if(RemoteCommunication_2::processesSpecificationsMessage.temperatureSetpoints[currentProcess].tempFunction == ramp) {
+        if(!rampSetpoints.empty()) {
+            rampSetpoint = rampSetpoints.front();
+            rampSetpoints.erase(rampSetpoints.begin());
+        }
+    }
+
     for(uint8_t i = 0; i < NUMBER_OF_PLACES; ++i) {
+
         if(RemoteCommunication_2::processesSpecificationsMessage.selectedPlaces[i]) {
+            if(RemoteCommunication_2::processesSpecificationsMessage.temperatureSetpoints[currentProcess].tempFunction == ramp) {
+                heatingControllers.at(i).setSetpoint(rampSetpoint);
+            }
            heatingControllers.at(i).updateInput();
         }
         Serial.print(heatingControllers.at(i).getInput());
         Serial.print(" "); 
-        Serial.print(heatingControllers.at(i).getOutput());
-        Serial.print(" ");
     }
     Serial.println();
 }
@@ -321,9 +339,7 @@ void MultiHeaterStirrerController::manualAdjustmentOfTheHeatingOutputs()
                             MAX_LIMIT_SEMICYCLE_VALUE);
 
         heatingControllers.at(i).adjustOutputSignalManually(semicyclesValue);
-        Serial.print(semicyclesValue); Serial.print(" ");Serial.print(heatingControllers.at(i).getOutput());Serial.print("  ;");
     }
-    Serial.println();
 }
 
 void MultiHeaterStirrerController::sendHMIManualAdjustmentMeasurements()
@@ -335,6 +351,27 @@ void MultiHeaterStirrerController::sendHMIManualAdjustmentMeasurements()
     }
     RemoteCommunication_2::sendManualAdjustmentMeasurements(manualAdjustmentMeasurements);
     
+}
+
+void MultiHeaterStirrerController::generateRampSetponts()
+{
+    float initialTemp = RemoteCommunication_2::processesSpecificationsMessage.temperatureSetpoints[currentProcess].initialTemperature;
+    float finalTemp = RemoteCommunication_2::processesSpecificationsMessage.temperatureSetpoints[currentProcess].finalTemperature;
+    float duration = RemoteCommunication_2::processesSpecificationsMessage.processDuration[currentProcess] * 60;
+    float increment = (finalTemp - initialTemp) / duration;
+    rampSetpoints.clear();
+    for (int i = 0; i <= duration; i++) {
+        rampSetpoints.push_back(initialTemp + increment * i);
+    }
+
+    /*
+    for (int i = 0; i < rampSetpoints.size(); i++) {
+        Serial.print("Ramp Setpoint ");
+        Serial.print(i);
+        Serial.print(": ");
+        Serial.println(rampSetpoints[i]);
+    }
+    */
 }
 
 OperationMode MultiHeaterStirrerController::readOperationModeButton()

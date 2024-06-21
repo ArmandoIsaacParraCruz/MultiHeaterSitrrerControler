@@ -64,9 +64,9 @@ void RemoteCommunication_2::sendMeasurements(Measurements& message)
     esp_err_t internalProcessStatus = esp_now_send(mac_HMI, (uint8_t*)&message, sizeof(message));
 	
     if(internalProcessStatus == ESP_OK) {
-        Serial.println("Internal Process to send data was succeed");
+        //Serial.println("Internal Process to send data was succeed");
     } else {
-		Serial.println("Internal Process to send data failed");
+		//Serial.println("Internal Process to send data failed");
 	}
 }
 

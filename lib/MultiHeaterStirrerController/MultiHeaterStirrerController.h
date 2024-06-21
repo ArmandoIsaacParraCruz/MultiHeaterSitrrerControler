@@ -49,6 +49,8 @@ class MultiHeaterStirrerController
         AutomaticProcessStatus automaticProcessStatus;
         bool blink = true;
 
+        std::vector<float>rampSetpoints;
+
         const uint8_t STIRRING_ADC_CHANNELS[NUMBER_OF_PLACES] = {0, 1, 2 ,3 ,4, 5};
         const uint8_t HEATING_ADC_CHANNELS[NUMBER_OF_PLACES] = {2, 3, 4, 5, 6, 7};
         const uint8_t CS_MAX6675[NUMBER_OF_PLACES] = {0, 1, 2, 3, 4, 5};
@@ -106,6 +108,7 @@ class MultiHeaterStirrerController
         void manualAdjustmentOfTheStirringOutputs();
         void manualAdjustmentOfTheHeatingOutputs();
         void sendHMIManualAdjustmentMeasurements();
+        void generateRampSetponts();
         OperationMode readOperationModeButton();
         uint32_t readADC(uint8_t channel, byte adc);
         void toggle();
