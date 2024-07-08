@@ -112,7 +112,6 @@ class MultiHeaterStirrerController
         OperationMode readOperationModeButton();
         uint32_t readADC(uint8_t channel, byte adc);
         void toggle();
-        
 };
 
 
