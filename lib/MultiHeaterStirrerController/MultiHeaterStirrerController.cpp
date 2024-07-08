@@ -284,7 +284,10 @@ void MultiHeaterStirrerController::produceHeatingPIDOutputs()
 
 void MultiHeaterStirrerController::sendHMIAutomaticProcessesMeasurements()
 {
-    measurements.infraredSensorTemp = readADC(INFRAREF_HEATING_CHANNEL_SENSOR, ADC_INFRARRED_SENSOR);
+    uint16_t Vin= readADC(INFRAREF_HEATING_CHANNEL_SENSOR, ADC_INFRARRED_SENSOR);
+    float temp =((5.0/22.0)*(Vin-660));
+    measurements.infraredSensorTemp = temp;
+    
     for(uint8_t i = 0; i < NUMBER_OF_PLACES; ++i) {
         measurements.RPM[i] = stirringControllers.at(i).getInput();
         measurements.temperatures[i] = heatingControllers.at(i).getInput();
