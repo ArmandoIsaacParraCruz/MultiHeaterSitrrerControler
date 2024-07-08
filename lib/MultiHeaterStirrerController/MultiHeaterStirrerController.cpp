@@ -329,6 +329,7 @@ void MultiHeaterStirrerController::manualAdjustmentOfTheStirringOutputs()
         stirringControllers.at(i).updateInput();
         stirringControllers.at(i).adjustOutputSignalManually(pwmValue);
     }
+    //ssss
 }
 
 void MultiHeaterStirrerController::manualAdjustmentOfTheHeatingOutputs()
